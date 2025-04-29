@@ -54,7 +54,7 @@ Used technologies:
 - [ ] Add `IOrderService` abstraction. This service will:
   - Retrieve all orders or orders by specific conditions.
   - Add, update, and delete orders by interacting with the repository.
-- [ ] Implement `IorderService` in `OrderService` class.
+- [ ] Implement `IOrderService` in `OrderService` class.
 - [ ] Create `OrderAddRequestValidator`, `OrderUpdateRequestValidator`, `OrderItemAddRequestValidator`,`OrderItemUpdateRequestValidator` with FluentValidation
 - [ ] Add mapping profiles for DTOs
 
