@@ -21,26 +21,27 @@ Used technologies:
 
 ### Data Access Layer
 
-- [ ] Add `Order` Entity with the following properties:
+- [x] Add `Order` Entity with the following properties:
   - `OrderId` (GUID, primary key)
   - `UserId` (GUID)
   - `OrderDate` (DateTime)
   - `TotalBill` (decimal)
   - Reference to `OrderItem` (`List<OrderItem>`)
-- [ ] Add `OrderItem` Entity with the following properties:
-  - `OrderId` (GUID, primary key)
+- [x] Add `OrderItem` Entity with the following properties:
+  - `ProductId` (GUID)
   - `UnitPrice` (decimal)
   - `Quantity` (int)
   - `TotalPrice` (decimal)
-- [ ] Add `ApplicationDbContext`
-- [ ] Add `IOrdersRepository` with the following methods:
+- [x] Add `IOrdersRepository` with the following methods:
   - `GetOrders()` - to retrieve all orders.
   - `GetOrderByCondition()` - to retrieve an order by a specific condition.
   - `AddOrder()` - to add a new order.
   - `UpdateOrder()` - to update an existing order.
   - `DeleteOrder()` - to delete an order by its ID.
-- [ ] Implement `IOrdersRepository` in the `OrdersRepository` class
-- [ ] Add `DependencyInjection` class
+- [x] Implement `IOrdersRepository` in the `OrdersRepository` class
+- [x] Add `DependencyInjection` class
+- [x] Create `MongoDbSettings` class
+- [x] Inject `MongoDbClient`
 
 ### Business Logic Layer
 
