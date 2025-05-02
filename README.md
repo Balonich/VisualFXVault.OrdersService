@@ -45,16 +45,16 @@ Used technologies:
 
 ### Business Logic Layer
 
-- [ ] Add DTOs
-  - [ ] `OrderResponse`: Contains data to return in API responses.
-  - [ ] `OrderAddRequest`: For adding a new order.
-  - [ ] `OrderUpdateRequest`: For updating an existing order.
-  - [ ] `OrderItemAddRequest`: For adding a new order item.
-  - [ ] `OrderItemUpdateRequest`: For updating an existing order item.
-- [ ] Add `IOrderService` abstraction. This service will:
+- [x] Add DTOs
+  - [x] `OrderResponse`: Contains data to return in API responses.
+  - [x] `OrderAddRequest`: For adding a new order.
+  - [x] `OrderUpdateRequest`: For updating an existing order.
+  - [x] `OrderItemAddRequest`: For adding a new order item.
+  - [x] `OrderItemUpdateRequest`: For updating an existing order item.
+- [x] Add `IOrderService` abstraction. This service will:
   - Retrieve all orders or orders by specific conditions.
   - Add, update, and delete orders by interacting with the repository.
-- [ ] Implement `IOrderService` in `OrderService` class.
+- [x] Implement `IOrderService` in `OrderService` class.
 - [ ] Create `OrderAddRequestValidator`, `OrderUpdateRequestValidator`, `OrderItemAddRequestValidator`,`OrderItemUpdateRequestValidator` with FluentValidation
 - [ ] Add mapping profiles for DTOs
 

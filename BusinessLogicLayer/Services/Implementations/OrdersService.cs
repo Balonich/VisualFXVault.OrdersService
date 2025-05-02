@@ -1,3 +1,4 @@
+using AutoMapper;
 using BusinessLogicLayer.DTOs;
 using BusinessLogicLayer.Services.Interfaces;
 using DataAccessLayer.Entities;
@@ -9,44 +10,112 @@ namespace BusinessLogicLayer.Services.Implementations;
 public class OrdersService : IOrdersService
 {
     private readonly IOrdersRepository _ordersRepository;
+    private readonly IMapper _mapper;
 
-    public OrdersService(IOrdersRepository ordersRepository)
+    public OrdersService(IOrdersRepository ordersRepository, IMapper mapper)
     {
         _ordersRepository = ordersRepository;
+        _mapper = mapper;
     }
 
-    public Task<OrderResponseDto?> GetOrderByCondition(FilterDefinition<Order> filter)
+    public async Task<OrderResponseDto?> GetOrderByCondition(FilterDefinition<Order> filter)
     {
-        throw new NotImplementedException();
+        Order? order = await _ordersRepository.GetOrderByCondition(filter);
+
+        if (order == null)
+        {
+            return null;
+        }
+
+        return _mapper.Map<OrderResponseDto>(order);
     }
 
-    public Task<OrderResponseDto?> GetOrderByIdAsync(Guid orderId)
+    public async Task<OrderResponseDto?> GetOrderByIdAsync(Guid orderId)
     {
-        throw new NotImplementedException();
+        Order? order = await _ordersRepository.GetOrderByIdAsync(orderId);
+
+        if (order == null)
+        {
+            return null;
+        }
+
+        return _mapper.Map<OrderResponseDto>(order);
     }
 
-    public Task<IEnumerable<OrderResponseDto?>> GetOrdersAsync()
+    public async Task<IEnumerable<OrderResponseDto?>> GetOrdersAsync()
     {
-        throw new NotImplementedException();
+        IEnumerable<Order> orders = await _ordersRepository.GetAllOrdersAsync();
+
+        return _mapper.Map<IEnumerable<OrderResponseDto?>>(orders);
     }
 
-    public Task<IEnumerable<OrderResponseDto?>> GetOrdersByCondition(FilterDefinition<Order> filter)
+    public async Task<IEnumerable<OrderResponseDto?>> GetOrdersByCondition(FilterDefinition<Order> filter)
     {
-        throw new NotImplementedException();
+        IEnumerable<Order> orders = await _ordersRepository.GetOrdersByCondition(filter);
+
+        return _mapper.Map<IEnumerable<OrderResponseDto?>>(orders);
     }
 
-    public Task<OrderResponseDto?> CreateOrderAsync(OrderAddRequestDto order)
+    public async Task<OrderResponseDto?> CreateOrderAsync(OrderAddRequestDto orderDto)
     {
-        throw new NotImplementedException();
+        var order = _mapper.Map<Order>(orderDto);
+
+        foreach (var item in order.OrderItems)
+        {
+            item.TotalPrice = item.UnitPrice * item.Quantity;
+        }
+
+        order.TotalBill = order.OrderItems.Sum(item => item.TotalPrice);
+
+        var createdOrder = await _ordersRepository.CreateOrderAsync(order);
+
+        if (createdOrder == null)
+        {
+            return null;
+        }
+
+        return _mapper.Map<OrderResponseDto>(createdOrder);
     }
 
-    public Task<OrderResponseDto?> UpdateOrderAsync(OrderUpdateRequestDto order)
+    public async Task<OrderResponseDto?> UpdateOrderAsync(OrderUpdateRequestDto orderDto)
     {
-        throw new NotImplementedException();
+        var existingOrder = await _ordersRepository.GetOrderByIdAsync(orderDto.OrderId);
+
+        if (existingOrder == null)
+        {
+            return null;
+        }
+
+        var order = _mapper.Map<Order>(orderDto);
+
+        foreach (var item in order.OrderItems)
+        {
+            item.TotalPrice = item.UnitPrice * item.Quantity;
+        }
+
+        order.TotalBill = order.OrderItems.Sum(item => item.TotalPrice);
+
+        var updatedOrder = await _ordersRepository.UpdateOrderAsync(order);
+
+        if (updatedOrder == null)
+        {
+            return null;
+        }
+
+        return _mapper.Map<OrderResponseDto>(updatedOrder);
     }
 
-    public Task<OrderResponseDto?> DeleteOrderAsync(Guid orderId)
+    public async Task<OrderResponseDto?> DeleteOrderAsync(Guid orderId)
     {
-        throw new NotImplementedException();
+        var order = await _ordersRepository.GetOrderByIdAsync(orderId);
+
+        if (order == null)
+        {
+            return null;
+        }
+
+        var isDeleted = await _ordersRepository.DeleteOrderAsync(orderId);
+
+        return isDeleted ? _mapper.Map<OrderResponseDto>(order) : null;
     }
 }
