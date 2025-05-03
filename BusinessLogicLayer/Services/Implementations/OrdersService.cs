@@ -105,17 +105,17 @@ public class OrdersService : IOrdersService
         return _mapper.Map<OrderResponseDto>(updatedOrder);
     }
 
-    public async Task<OrderResponseDto?> DeleteOrderAsync(Guid orderId)
+    public async Task<bool> DeleteOrderAsync(Guid orderId)
     {
         var order = await _ordersRepository.GetOrderByIdAsync(orderId);
 
         if (order == null)
         {
-            return null;
+            return false;
         }
 
         var isDeleted = await _ordersRepository.DeleteOrderAsync(orderId);
 
-        return isDeleted ? _mapper.Map<OrderResponseDto>(order) : null;
+        return isDeleted;
     }
 }

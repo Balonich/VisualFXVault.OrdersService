@@ -55,8 +55,8 @@ Used technologies:
   - Retrieve all orders or orders by specific conditions.
   - Add, update, and delete orders by interacting with the repository.
 - [x] Implement `IOrderService` in `OrderService` class.
-- [ ] Create `OrderAddRequestValidator`, `OrderUpdateRequestValidator`, `OrderItemAddRequestValidator`,`OrderItemUpdateRequestValidator` with FluentValidation
-- [ ] Add mapping profiles for DTOs
+- [x] Create `OrderAddRequestValidator`, `OrderUpdateRequestValidator`, `OrderItemAddRequestValidator`,`OrderItemUpdateRequestValidator` with FluentValidation
+- [x] Add mapping profiles for DTOs
 
 ### API Layer
 
