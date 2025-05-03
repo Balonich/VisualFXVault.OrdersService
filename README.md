@@ -60,15 +60,15 @@ Used technologies:
 
 ### API Layer
 
-- [ ] Implement `OrdersController` API endpoints:
-  - [ ] `GET /api/orders`: Retrieve all orders.
-  - [ ] `GET /api/orders/search/order-id/{orderId}`: Retrieve an order by ID.
-  - [ ] `GET /api/orders/search/product-id/{productId}`: Retrieve orders containing a specific product.
-  - [ ] `GET /api/orders/search/order-date/{orderDate}`: Retrieve orders by a specific order date.
-  - [ ] `POST /api/orders`: Add a new order.
-  - [ ] `PUT /api/orders`: Update an existing order.
-  - [ ] `DELETE /api/orders/{orderId}`: Delete an order by ID.
-- [ ] Add exception handling middleware. This middleware should:
+- [x] Implement `OrdersController` API endpoints:
+  - [x] `GET /api/orders`: Retrieve all orders.
+  - [x] `GET /api/orders/search/order-id/{orderId}`: Retrieve an order by ID.
+  - [x] `GET /api/orders/search/product-id/{productId}`: Retrieve orders containing a specific product.
+  - [x] `GET /api/orders/search/order-date/{orderDate}`: Retrieve orders by a specific order date.
+  - [x] `POST /api/orders`: Add a new order.
+  - [x] `PUT /api/orders`: Update an existing order.
+  - [x] `DELETE /api/orders/{orderId}`: Delete an order by ID.
+- [x] Add exception handling middleware. This middleware should:
   - Log exceptions.
   - Return a generic error response with a 500 status code if any unhandled exceptions occur.
-- [ ] Add Scalar UI for OpenAPI documentation
+- [x] Add Scalar UI for OpenAPI documentation
