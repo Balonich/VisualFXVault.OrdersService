@@ -14,18 +14,24 @@ public static class DependencyInjection
     {
         services.Configure<MongoDbSettings>(
             configuration.GetSection(nameof(MongoDbSettings)));
-        
-        services.AddSingleton(serviceProvider => 
+
+        services.AddSingleton(serviceProvider =>
         {
-            var options = serviceProvider.GetRequiredService<IOptions<MongoDbSettings>>().Value;
-            return new MongoClient(options.ConnectionString);
+            var connectionStringTemplate = serviceProvider.GetRequiredService<IOptions<MongoDbSettings>>().Value.ConnectionString;
+
+            var connectionString = connectionStringTemplate
+                .Replace("$MONGO_HOST", Environment.GetEnvironmentVariable("MONGO_HOST"))
+                .Replace("$MONGO_PORT", Environment.GetEnvironmentVariable("MONGO_PORT"));
+
+            return new MongoClient(connectionString);
         });
 
-        services.AddScoped(serviceProvider => 
+        services.AddScoped(serviceProvider =>
         {
-            var options = serviceProvider.GetRequiredService<IOptions<MongoDbSettings>>().Value;
+            var databaseName = serviceProvider.GetRequiredService<IOptions<MongoDbSettings>>().Value.DatabaseName;
             var client = serviceProvider.GetRequiredService<MongoClient>();
-            return client.GetDatabase(options.DatabaseName);
+
+            return client.GetDatabase(databaseName);
         });
 
         services.AddScoped<IOrdersRepository, OrdersRepository>();

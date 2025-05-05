@@ -40,11 +40,11 @@ public class OrdersRepository : IOrdersRepository
     public async Task<Order?> CreateOrderAsync(Order order)
     {
         order.OrderId = Guid.NewGuid();
-        order.Id = order.OrderId;
+        order._id = order.OrderId;
 
         foreach (OrderItem orderItem in order.OrderItems)
         {
-            orderItem.Id = Guid.NewGuid();
+            orderItem._id = Guid.NewGuid();
         }
 
         await _ordersCollection.InsertOneAsync(order);
@@ -62,7 +62,7 @@ public class OrdersRepository : IOrdersRepository
             return null;
         }
 
-        order.Id = existingOrder.Id;
+        order._id = existingOrder._id;
 
         ReplaceOneResult replaceOneResult = await _ordersCollection.ReplaceOneAsync(filter, order);
 

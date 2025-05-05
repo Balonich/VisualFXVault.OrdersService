@@ -3,19 +3,34 @@ using BusinessLogicLayer.DTOs;
 using BusinessLogicLayer.Services.Interfaces;
 using DataAccessLayer.Entities;
 using DataAccessLayer.Repositories.Interfaces;
+using FluentValidation;
+using FluentValidation.Results;
 using MongoDB.Driver;
 
 namespace BusinessLogicLayer.Services.Implementations;
 
 public class OrdersService : IOrdersService
 {
-    private readonly IOrdersRepository _ordersRepository;
+    private readonly IValidator<OrderAddRequestDto> _orderAddRequestValidator;
+    private readonly IValidator<OrderItemAddRequestDto> _orderItemAddRequestValidator;
+    private readonly IValidator<OrderUpdateRequestDto> _orderUpdateRequestValidator;
+    private readonly IValidator<OrderItemUpdateRequestDto> _orderItemUpdateRequestValidator;
     private readonly IMapper _mapper;
+    private IOrdersRepository _ordersRepository;
 
-    public OrdersService(IOrdersRepository ordersRepository, IMapper mapper)
+    public OrdersService(IOrdersRepository ordersRepository,
+        IMapper mapper,
+        IValidator<OrderAddRequestDto> orderAddRequestValidator,
+        IValidator<OrderItemAddRequestDto> orderItemAddRequestValidator,
+        IValidator<OrderUpdateRequestDto> orderUpdateRequestValidator,
+        IValidator<OrderItemUpdateRequestDto> orderItemUpdateRequestValidator)
     {
-        _ordersRepository = ordersRepository;
+        _orderAddRequestValidator = orderAddRequestValidator;
+        _orderItemAddRequestValidator = orderItemAddRequestValidator;
+        _orderUpdateRequestValidator = orderUpdateRequestValidator;
+        _orderItemUpdateRequestValidator = orderItemUpdateRequestValidator;
         _mapper = mapper;
+        _ordersRepository = ordersRepository;
     }
 
     public async Task<OrderResponseDto?> GetOrderByCondition(FilterDefinition<Order> filter)
@@ -56,53 +71,99 @@ public class OrdersService : IOrdersService
         return _mapper.Map<IEnumerable<OrderResponseDto?>>(orders);
     }
 
-    public async Task<OrderResponseDto?> CreateOrderAsync(OrderAddRequestDto orderDto)
+    public async Task<OrderResponseDto?> CreateOrderAsync(OrderAddRequestDto orderAddRequest)
     {
-        var order = _mapper.Map<Order>(orderDto);
-
-        foreach (var item in order.OrderItems)
+        if (orderAddRequest == null)
         {
-            item.TotalPrice = item.UnitPrice * item.Quantity;
+            throw new ArgumentNullException(nameof(orderAddRequest));
         }
 
-        order.TotalBill = order.OrderItems.Sum(item => item.TotalPrice);
+        var orderAddRequestValidationResult = await _orderAddRequestValidator.ValidateAsync(orderAddRequest);
+        if (!orderAddRequestValidationResult.IsValid)
+        {
+            var errors = string.Join(", ", orderAddRequestValidationResult.Errors.Select(temp => temp.ErrorMessage));
+            throw new ArgumentException(errors);
+        }
 
-        var createdOrder = await _ordersRepository.CreateOrderAsync(order);
+        foreach (var orderItemAddRequest in orderAddRequest.OrderItems)
+        {
+            var orderItemAddRequestValidationResult = await _orderItemAddRequestValidator.ValidateAsync(orderItemAddRequest);
 
-        if (createdOrder == null)
+            if (!orderItemAddRequestValidationResult.IsValid)
+            {
+                var errors = string.Join(", ", orderItemAddRequestValidationResult.Errors.Select(temp => temp.ErrorMessage));
+                throw new ArgumentException(errors);
+            }
+        }
+
+        //TODO: Add logic for checking if UserID exists in Users microservice
+
+        var orderInput = _mapper.Map<Order>(orderAddRequest);
+
+        foreach (var orderItem in orderInput.OrderItems)
+        {
+            orderItem.TotalPrice = orderItem.Quantity * orderItem.UnitPrice;
+        }
+        orderInput.TotalBill = orderInput.OrderItems.Sum(temp => temp.TotalPrice);
+
+
+        var addedOrder = await _ordersRepository.CreateOrderAsync(orderInput);
+
+        if (addedOrder == null)
         {
             return null;
         }
 
-        return _mapper.Map<OrderResponseDto>(createdOrder);
+        var addedOrderResponse = _mapper.Map<OrderResponseDto>(addedOrder);
+
+        return addedOrderResponse;
     }
 
-    public async Task<OrderResponseDto?> UpdateOrderAsync(OrderUpdateRequestDto orderDto)
+    public async Task<OrderResponseDto?> UpdateOrderAsync(OrderUpdateRequestDto orderUpdateRequest)
     {
-        var existingOrder = await _ordersRepository.GetOrderByIdAsync(orderDto.OrderId);
-
-        if (existingOrder == null)
+        if (orderUpdateRequest == null)
         {
-            return null;
+            throw new ArgumentNullException(nameof(orderUpdateRequest));
         }
 
-        var order = _mapper.Map<Order>(orderDto);
-
-        foreach (var item in order.OrderItems)
+        var orderUpdateRequestValidationResult = await _orderUpdateRequestValidator.ValidateAsync(orderUpdateRequest);
+        if (!orderUpdateRequestValidationResult.IsValid)
         {
-            item.TotalPrice = item.UnitPrice * item.Quantity;
+            var errors = string.Join(", ", orderUpdateRequestValidationResult.Errors.Select(temp => temp.ErrorMessage));
+            throw new ArgumentException(errors);
         }
 
-        order.TotalBill = order.OrderItems.Sum(item => item.TotalPrice);
+        foreach (var orderItemUpdateRequest in orderUpdateRequest.OrderItems)
+        {
+            var orderItemUpdateRequestValidationResult = await _orderItemUpdateRequestValidator.ValidateAsync(orderItemUpdateRequest);
 
-        var updatedOrder = await _ordersRepository.UpdateOrderAsync(order);
+            if (!orderItemUpdateRequestValidationResult.IsValid)
+            {
+                var errors = string.Join(", ", orderItemUpdateRequestValidationResult.Errors.Select(temp => temp.ErrorMessage));
+                throw new ArgumentException(errors);
+            }
+        }
+
+        //TODO: Add logic for checking if UserID exists in Users microservice
+
+        var orderInput = _mapper.Map<Order>(orderUpdateRequest);
+
+        foreach (var orderItem in orderInput.OrderItems)
+        {
+            orderItem.TotalPrice = orderItem.Quantity * orderItem.UnitPrice;
+        }
+        orderInput.TotalBill = orderInput.OrderItems.Sum(temp => temp.TotalPrice);
+
+        var updatedOrder = await _ordersRepository.UpdateOrderAsync(orderInput);
 
         if (updatedOrder == null)
         {
             return null;
         }
 
-        return _mapper.Map<OrderResponseDto>(updatedOrder);
+        var updatedOrderResponse = _mapper.Map<OrderResponseDto>(updatedOrder);
+
+        return updatedOrderResponse;
     }
 
     public async Task<bool> DeleteOrderAsync(Guid orderId)

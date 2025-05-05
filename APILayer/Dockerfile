@@ -22,6 +22,6 @@ RUN dotnet publish "./APILayer.csproj" -c $BUILD_CONFIGURATION -o /app/publish /
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
-ENV MONGODB_HOST=localhost
-ENV MONGODB_PORT=27017
+ENV MONGO_HOST=localhost
+ENV MONGO_PORT=27017
 ENTRYPOINT ["dotnet", "APILayer.dll"]
