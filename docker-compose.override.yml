@@ -1,0 +1,14 @@
+services:
+  orders-microservice:
+    image: balonich/visualfxvault-orders-microservice:latest
+    build:
+      context: .
+      dockerfile: APILayer/Dockerfile
+      args:
+        - configuration=Debug
+    ports:
+      - 7000:8080
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+    volumes:
+      - ~/.vsdbg:/remote_debugger:rw

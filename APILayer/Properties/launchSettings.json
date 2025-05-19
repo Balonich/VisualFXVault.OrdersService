@@ -1,11 +1,8 @@
-﻿{
-  "$schema": "https://json.schemastore.org/launchsettings.json",
+{
   "profiles": {
     "http": {
       "commandName": "Project",
-      "dotnetRunMessages": true,
       "launchBrowser": true,
-      "applicationUrl": "http://localhost:5042",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
         "MONGO_HOST": "localhost",
@@ -13,13 +10,13 @@
         "MONGO_DB": "VisualFXVault_Orders",
         "USERS_SERVICE_HOST": "http://localhost",
         "USERS_SERVICE_PORT": "9090"
-      }
+      },
+      "dotnetRunMessages": true,
+      "applicationUrl": "http://localhost:5042"
     },
     "https": {
       "commandName": "Project",
-      "dotnetRunMessages": true,
       "launchBrowser": true,
-      "applicationUrl": "https://localhost:7076;http://localhost:5042",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
         "MONGO_HOST": "localhost",
@@ -27,7 +24,21 @@
         "MONGO_DB": "VisualFXVault_Orders",
         "USERS_SERVICE_HOST": "http://localhost",
         "USERS_SERVICE_PORT": "9090"
-      }
+      },
+      "dotnetRunMessages": true,
+      "applicationUrl": "https://localhost:7076;http://localhost:5042"
+    },
+    "Container (Dockerfile)": {
+      "commandName": "Docker",
+      "launchBrowser": true,
+      "launchUrl": "{Scheme}://{ServiceHost}:{ServicePort}",
+      "environmentVariables": {
+        "ASPNETCORE_HTTPS_PORTS": "8081",
+        "ASPNETCORE_HTTP_PORTS": "8080"
+      },
+      "publishAllPorts": true,
+      "useSSL": true
     }
-  }
+  },
+  "$schema": "https://json.schemastore.org/launchsettings.json"
 }
