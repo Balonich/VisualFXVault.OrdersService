@@ -1,5 +1,6 @@
 using APILayer.Middlewares;
 using BusinessLogicLayer.Extensions;
+using BusinessLogicLayer.HttpClients;
 using DataAccessLayer.Extensions;
 using FluentValidation.AspNetCore;
 using Scalar.AspNetCore;
@@ -32,6 +33,10 @@ builder.Services.AddCors(options =>
     });
 });
 
+builder.Services.AddHttpClient<UsersMicroserviceClient>(client =>
+{
+    client.BaseAddress = new Uri($"{builder.Configuration["USERS_SERVICE_HOST"]}:{builder.Configuration["USERS_SERVICE_PORT"]}");
+});
 
 var app = builder.Build();
 

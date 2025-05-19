@@ -22,6 +22,9 @@ RUN dotnet publish "./APILayer.csproj" -c $BUILD_CONFIGURATION -o /app/publish /
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
+ENV USERS_SERVICE_HOST=http://localhost
+ENV USERS_SERVICE_PORT=9090
 ENV MONGO_HOST=localhost
 ENV MONGO_PORT=27017
+ENV MONGO_DB=VisualFXVault_Orders
 ENTRYPOINT ["dotnet", "APILayer.dll"]

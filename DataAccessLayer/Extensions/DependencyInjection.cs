@@ -28,7 +28,9 @@ public static class DependencyInjection
 
         services.AddScoped(serviceProvider =>
         {
-            var databaseName = serviceProvider.GetRequiredService<IOptions<MongoDbSettings>>().Value.DatabaseName;
+            var databaseName = serviceProvider.GetRequiredService<IOptions<MongoDbSettings>>().Value.DatabaseName
+                .Replace("$MONGO_DB", Environment.GetEnvironmentVariable("MONGO_DB"));
+
             var client = serviceProvider.GetRequiredService<MongoClient>();
 
             return client.GetDatabase(databaseName);
