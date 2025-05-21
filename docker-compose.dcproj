@@ -7,7 +7,7 @@
     <ProjectGuid>4e7b2f88-d26c-4bfb-a53a-7a0e66b519be</ProjectGuid>
     <DockerLaunchAction>LaunchBrowser</DockerLaunchAction>
     <DockerServiceUrl>{Scheme}://localhost:{ServicePort}</DockerServiceUrl>
-    <DockerServiceName>apilayer</DockerServiceName>
+    <DockerServiceName>orders-microservice</DockerServiceName>
   </PropertyGroup>
   <ItemGroup>
     <None Include="docker-compose.override.yml">
