@@ -5,7 +5,6 @@ using BusinessLogicLayer.Services.Interfaces;
 using DataAccessLayer.Entities;
 using DataAccessLayer.Repositories.Interfaces;
 using FluentValidation;
-using FluentValidation.Results;
 using MongoDB.Driver;
 
 namespace BusinessLogicLayer.Services.Implementations;
@@ -17,6 +16,7 @@ public class OrdersService : IOrdersService
     private readonly IValidator<OrderUpdateRequestDto> _orderUpdateRequestValidator;
     private readonly IValidator<OrderItemUpdateRequestDto> _orderItemUpdateRequestValidator;
     private readonly UsersMicroserviceClient _usersMicroserviceClient;
+    private readonly ProductsMicroserviceClient _productsMicroserviceClient;
     private readonly IMapper _mapper;
     private IOrdersRepository _ordersRepository;
 
@@ -26,13 +26,15 @@ public class OrdersService : IOrdersService
         IValidator<OrderItemAddRequestDto> orderItemAddRequestValidator,
         IValidator<OrderUpdateRequestDto> orderUpdateRequestValidator,
         IValidator<OrderItemUpdateRequestDto> orderItemUpdateRequestValidator,
-        UsersMicroserviceClient usersMicroserviceClient)
+        UsersMicroserviceClient usersMicroserviceClient,
+        ProductsMicroserviceClient productsMicroserviceClient)
     {
         _orderAddRequestValidator = orderAddRequestValidator;
         _orderItemAddRequestValidator = orderItemAddRequestValidator;
         _orderUpdateRequestValidator = orderUpdateRequestValidator;
         _orderItemUpdateRequestValidator = orderItemUpdateRequestValidator;
         _usersMicroserviceClient = usersMicroserviceClient;
+        _productsMicroserviceClient = productsMicroserviceClient;
         _mapper = mapper;
         _ordersRepository = ordersRepository;
     }
@@ -82,39 +84,24 @@ public class OrdersService : IOrdersService
             throw new ArgumentNullException(nameof(orderAddRequest));
         }
 
-        var orderAddRequestValidationResult = await _orderAddRequestValidator.ValidateAsync(orderAddRequest);
-        if (!orderAddRequestValidationResult.IsValid)
-        {
-            var errors = string.Join(", ", orderAddRequestValidationResult.Errors.Select(temp => temp.ErrorMessage));
-            throw new ArgumentException(errors);
-        }
+        await ValidateOrderRequestAsync(_orderAddRequestValidator, orderAddRequest);
 
-        foreach (var orderItemAddRequest in orderAddRequest.OrderItems)
-        {
-            var orderItemAddRequestValidationResult = await _orderItemAddRequestValidator.ValidateAsync(orderItemAddRequest);
+        var productsFromOrder = await _productsMicroserviceClient.GetProductsByIdsAsync(
+            orderAddRequest.OrderItems.Select(item => item.ProductId));
 
-            if (!orderItemAddRequestValidationResult.IsValid)
-            {
-                var errors = string.Join(", ", orderItemAddRequestValidationResult.Errors.Select(temp => temp.ErrorMessage));
-                throw new ArgumentException(errors);
-            }
-        }
+        await ValidateOrderItemsAsync(
+            orderAddRequest.OrderItems,
+            _orderItemAddRequestValidator,
+            productsFromOrder,
+            item => item.ProductId,
+            product => product.ProductId);
 
         if (await _usersMicroserviceClient.GetUserByIdAsync(orderAddRequest.UserId) == null)
         {
             throw new ArgumentException($"User with ID {orderAddRequest.UserId} does not exist.");
         }
 
-        var orderInput = _mapper.Map<Order>(orderAddRequest);
-
-        foreach (var orderItem in orderInput.OrderItems)
-        {
-            orderItem.TotalPrice = orderItem.Quantity * orderItem.UnitPrice;
-        }
-        orderInput.TotalBill = orderInput.OrderItems.Sum(temp => temp.TotalPrice);
-
-
-        var addedOrder = await _ordersRepository.CreateOrderAsync(orderInput);
+        var addedOrder = await _ordersRepository.CreateOrderAsync(InitializeOrderWithItems(orderAddRequest));
 
         if (addedOrder == null)
         {
@@ -122,6 +109,15 @@ public class OrdersService : IOrdersService
         }
 
         var addedOrderResponse = _mapper.Map<OrderResponseDto>(addedOrder);
+
+        if (addedOrderResponse != null)
+        {
+            MapProductDetailsToOrderItems(
+                addedOrderResponse.OrderItems,
+                productsFromOrder,
+                item => item.ProductId,
+                product => product.ProductId);
+        }
 
         return addedOrderResponse;
     }
@@ -133,38 +129,25 @@ public class OrdersService : IOrdersService
             throw new ArgumentNullException(nameof(orderUpdateRequest));
         }
 
-        var orderUpdateRequestValidationResult = await _orderUpdateRequestValidator.ValidateAsync(orderUpdateRequest);
-        if (!orderUpdateRequestValidationResult.IsValid)
-        {
-            var errors = string.Join(", ", orderUpdateRequestValidationResult.Errors.Select(temp => temp.ErrorMessage));
-            throw new ArgumentException(errors);
-        }
+        await ValidateOrderRequestAsync(_orderUpdateRequestValidator, orderUpdateRequest);
 
-        foreach (var orderItemUpdateRequest in orderUpdateRequest.OrderItems)
-        {
-            var orderItemUpdateRequestValidationResult = await _orderItemUpdateRequestValidator.ValidateAsync(orderItemUpdateRequest);
+        var productsFromOrder = await _productsMicroserviceClient.GetProductsByIdsAsync(
+            orderUpdateRequest.OrderItems.Select(item => item.ProductId));
 
-            if (!orderItemUpdateRequestValidationResult.IsValid)
-            {
-                var errors = string.Join(", ", orderItemUpdateRequestValidationResult.Errors.Select(temp => temp.ErrorMessage));
-                throw new ArgumentException(errors);
-            }
-        }
+        await ValidateOrderItemsAsync(
+            orderUpdateRequest.OrderItems,
+            _orderItemUpdateRequestValidator,
+            productsFromOrder,
+            item => item.ProductId,
+            product => product.ProductId
+        );
 
         if (await _usersMicroserviceClient.GetUserByIdAsync(orderUpdateRequest.UserId) == null)
         {
             throw new ArgumentException($"User with ID {orderUpdateRequest.UserId} does not exist.");
         }
 
-        var orderInput = _mapper.Map<Order>(orderUpdateRequest);
-
-        foreach (var orderItem in orderInput.OrderItems)
-        {
-            orderItem.TotalPrice = orderItem.Quantity * orderItem.UnitPrice;
-        }
-        orderInput.TotalBill = orderInput.OrderItems.Sum(temp => temp.TotalPrice);
-
-        var updatedOrder = await _ordersRepository.UpdateOrderAsync(orderInput);
+        var updatedOrder = await _ordersRepository.UpdateOrderAsync(InitializeOrderWithItems(orderUpdateRequest));
 
         if (updatedOrder == null)
         {
@@ -172,6 +155,15 @@ public class OrdersService : IOrdersService
         }
 
         var updatedOrderResponse = _mapper.Map<OrderResponseDto>(updatedOrder);
+
+        if (updatedOrderResponse != null)
+        {
+            MapProductDetailsToOrderItems(
+                updatedOrderResponse.OrderItems,
+                productsFromOrder,
+                item => item.ProductId,
+                product => product.ProductId);
+        }
 
         return updatedOrderResponse;
     }
@@ -188,5 +180,74 @@ public class OrdersService : IOrdersService
         var isDeleted = await _ordersRepository.DeleteOrderAsync(orderId);
 
         return isDeleted;
+    }
+
+
+    private async Task ValidateOrderRequestAsync<T>(IValidator<T> validator, T request)
+    {
+        if (request == null)
+        {
+            throw new ArgumentNullException(nameof(request));
+        }
+
+        var validationResult = await validator.ValidateAsync(request);
+        if (!validationResult.IsValid)
+        {
+            var errors = string.Join(", ", validationResult.Errors.Select(temp => temp.ErrorMessage));
+            throw new ArgumentException(errors);
+        }
+    }
+
+    private async Task ValidateOrderItemsAsync<TItem, TProduct>(
+        IEnumerable<TItem> orderItems,
+        IValidator<TItem> validator,
+        IEnumerable<TProduct> products,
+        Func<TItem, Guid> getItemProductId,
+        Func<TProduct, Guid> getProductId)
+    {
+        foreach (var orderItem in orderItems)
+        {
+            var productId = getItemProductId(orderItem);
+            var product = products.FirstOrDefault(p => getProductId(p).Equals(productId));
+
+            if (product == null)
+            {
+                throw new ArgumentException($"Product with ID {productId} does not exist.");
+            }
+
+            await ValidateOrderRequestAsync(validator, orderItem);
+        }
+    }
+
+    private Order InitializeOrderWithItems<T>(T orderRequest)
+    {
+        var orderInput = _mapper.Map<Order>(orderRequest);
+
+        foreach (var orderItem in orderInput.OrderItems)
+        {
+            orderItem.TotalPrice = orderItem.Quantity * orderItem.UnitPrice;
+        }
+        orderInput.TotalBill = orderInput.OrderItems.Sum(temp => temp.TotalPrice);
+        return orderInput;
+    }
+
+    private void MapProductDetailsToOrderItems<TItem, TProduct>(
+        IEnumerable<TItem> orderItems,
+        IEnumerable<TProduct> products,
+        Func<TItem, Guid> getItemProductId,
+        Func<TProduct, Guid> getProductId)
+    {
+        foreach (var orderItem in orderItems)
+        {
+            var productId = getItemProductId(orderItem);
+            var product = products.FirstOrDefault(p => getProductId(p).Equals(productId));
+
+            if (product == null)
+            {
+                continue;
+            }
+
+            _mapper.Map(product, orderItem);
+        }
     }
 }

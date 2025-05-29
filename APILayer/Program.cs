@@ -38,6 +38,11 @@ builder.Services.AddHttpClient<UsersMicroserviceClient>(client =>
     client.BaseAddress = new Uri($"{builder.Configuration["USERS_SERVICE_HOST"]}:{builder.Configuration["USERS_SERVICE_PORT"]}");
 });
 
+builder.Services.AddHttpClient<ProductsMicroserviceClient>(client =>
+{
+    client.BaseAddress = new Uri($"{builder.Configuration["PRODUCTS_SERVICE_HOST"]}:{builder.Configuration["PRODUCTS_SERVICE_PORT"]}");
+});
+
 var app = builder.Build();
 
 app.UseExceptionHandling();
