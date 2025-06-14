@@ -48,7 +48,21 @@ public class OrdersService : IOrdersService
             return null;
         }
 
-        return _mapper.Map<OrderResponseDto>(order);
+        var productsFromOrder = await _productsMicroserviceClient.GetProductsByIdsAsync(
+            order.OrderItems.Select(item => item.ProductId));
+
+        var orderResponse = _mapper.Map<OrderResponseDto>(order);
+
+        if (orderResponse != null)
+        {
+            MapProductDetailsToOrderItems(
+                orderResponse.OrderItems,
+                productsFromOrder,
+                item => item.ProductId,
+                product => product.ProductId);
+        }
+
+        return orderResponse;
     }
 
     public async Task<OrderResponseDto?> GetOrderByIdAsync(Guid orderId)
@@ -60,21 +74,69 @@ public class OrdersService : IOrdersService
             return null;
         }
 
-        return _mapper.Map<OrderResponseDto>(order);
+        var productsFromOrder = await _productsMicroserviceClient.GetProductsByIdsAsync(
+            order.OrderItems.Select(item => item.ProductId));
+
+        var orderResponse = _mapper.Map<OrderResponseDto>(order);
+
+        if (orderResponse != null)
+        {
+            MapProductDetailsToOrderItems(
+                orderResponse.OrderItems,
+                productsFromOrder,
+                item => item.ProductId,
+                product => product.ProductId);
+        }
+
+        return orderResponse;
     }
 
     public async Task<IEnumerable<OrderResponseDto?>> GetOrdersAsync()
     {
         IEnumerable<Order> orders = await _ordersRepository.GetAllOrdersAsync();
 
-        return _mapper.Map<IEnumerable<OrderResponseDto?>>(orders);
+        var productsFromOrder = await _productsMicroserviceClient.GetProductsByIdsAsync(
+            orders.SelectMany(order => order.OrderItems.Select(item => item.ProductId)));
+
+        var orderResponses = _mapper.Map<IEnumerable<OrderResponseDto?>>(orders);
+
+        foreach (var orderResponse in orderResponses)
+        {
+            if (orderResponse != null)
+            {
+                MapProductDetailsToOrderItems(
+                    orderResponse.OrderItems,
+                    productsFromOrder,
+                    item => item.ProductId,
+                    product => product.ProductId);
+            }
+        }
+
+        return orderResponses;
     }
 
     public async Task<IEnumerable<OrderResponseDto?>> GetOrdersByCondition(FilterDefinition<Order> filter)
     {
         IEnumerable<Order> orders = await _ordersRepository.GetOrdersByCondition(filter);
 
-        return _mapper.Map<IEnumerable<OrderResponseDto?>>(orders);
+        var productsFromOrder = await _productsMicroserviceClient.GetProductsByIdsAsync(
+            orders.SelectMany(order => order.OrderItems.Select(item => item.ProductId)));
+
+        var orderResponses = _mapper.Map<IEnumerable<OrderResponseDto?>>(orders);
+
+        foreach (var orderResponse in orderResponses)
+        {
+            if (orderResponse != null)
+            {
+                MapProductDetailsToOrderItems(
+                    orderResponse.OrderItems,
+                    productsFromOrder,
+                    item => item.ProductId,
+                    product => product.ProductId);
+            }
+        }
+
+        return orderResponses;
     }
 
     public async Task<OrderResponseDto?> CreateOrderAsync(OrderAddRequestDto orderAddRequest)
@@ -181,7 +243,6 @@ public class OrdersService : IOrdersService
 
         return isDeleted;
     }
-
 
     private async Task ValidateOrderRequestAsync<T>(IValidator<T> validator, T request)
     {
