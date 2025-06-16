@@ -1,6 +1,8 @@
 using APILayer.Middlewares;
 using BusinessLogicLayer.Extensions;
 using BusinessLogicLayer.HttpClients;
+using BusinessLogicLayer.Interfaces.Policies;
+using BusinessLogicLayer.Policies.Implementations;
 using DataAccessLayer.Extensions;
 using FluentValidation.AspNetCore;
 using Scalar.AspNetCore;
@@ -33,15 +35,25 @@ builder.Services.AddCors(options =>
     });
 });
 
+builder.Services.AddScoped<IMicroservicePolicies, MicroservicePolicies>();
+
 builder.Services.AddHttpClient<UsersMicroserviceClient>(client =>
 {
     client.BaseAddress = new Uri($"{builder.Configuration["USERS_SERVICE_HOST"]}:{builder.Configuration["USERS_SERVICE_PORT"]}");
-});
+})
+.AddPolicyHandler((serviceProvider, _) =>
+    serviceProvider.GetRequiredService<IMicroservicePolicies>().GetExponentialRetryPolicy())
+.AddPolicyHandler((serviceProvider, _) =>
+    serviceProvider.GetRequiredService<IMicroservicePolicies>().GetCircuitBreakerPolicy());
 
 builder.Services.AddHttpClient<ProductsMicroserviceClient>(client =>
 {
     client.BaseAddress = new Uri($"{builder.Configuration["PRODUCTS_SERVICE_HOST"]}:{builder.Configuration["PRODUCTS_SERVICE_PORT"]}");
-});
+})
+.AddPolicyHandler((serviceProvider, _) =>
+    serviceProvider.GetRequiredService<IMicroservicePolicies>().GetExponentialRetryPolicy())
+.AddPolicyHandler((serviceProvider, _) =>
+    serviceProvider.GetRequiredService<IMicroservicePolicies>().GetCircuitBreakerPolicy());
 
 var app = builder.Build();
 
