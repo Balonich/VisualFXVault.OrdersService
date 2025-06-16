@@ -55,11 +55,21 @@ public class OrdersService : IOrdersService
 
         if (orderResponse != null)
         {
+            var user = await _usersMicroserviceClient.GetUserByIdAsync(orderResponse.UserId);
+            if (user == null)
+            {
+                throw new ArgumentException($"User with ID {orderResponse.UserId} does not exist.");
+            }
+
             MapProductDetailsToOrderItems(
                 orderResponse.OrderItems,
                 productsFromOrder,
                 item => item.ProductId,
                 product => product.ProductId);
+
+            MapUserDetailsToOrderResponse(
+                orderResponse,
+                user);
         }
 
         return orderResponse;
@@ -81,11 +91,21 @@ public class OrdersService : IOrdersService
 
         if (orderResponse != null)
         {
+            var user = await _usersMicroserviceClient.GetUserByIdAsync(orderResponse.UserId);
+            if (user == null)
+            {
+                throw new ArgumentException($"User with ID {orderResponse.UserId} does not exist.");
+            }
+
             MapProductDetailsToOrderItems(
                 orderResponse.OrderItems,
                 productsFromOrder,
                 item => item.ProductId,
                 product => product.ProductId);
+
+            MapUserDetailsToOrderResponse(
+                orderResponse,
+                user);
         }
 
         return orderResponse;
@@ -104,11 +124,21 @@ public class OrdersService : IOrdersService
         {
             if (orderResponse != null)
             {
+                var user = await _usersMicroserviceClient.GetUserByIdAsync(orderResponse.UserId);
+                if (user == null)
+                {
+                    throw new ArgumentException($"User with ID {orderResponse.UserId} does not exist.");
+                }
+
                 MapProductDetailsToOrderItems(
                     orderResponse.OrderItems,
                     productsFromOrder,
                     item => item.ProductId,
                     product => product.ProductId);
+
+                MapUserDetailsToOrderResponse(
+                    orderResponse,
+                    user);
             }
         }
 
@@ -128,11 +158,21 @@ public class OrdersService : IOrdersService
         {
             if (orderResponse != null)
             {
+                var user = await _usersMicroserviceClient.GetUserByIdAsync(orderResponse.UserId);
+                if (user == null)
+                {
+                    throw new ArgumentException($"User with ID {orderResponse.UserId} does not exist.");
+                }
+
                 MapProductDetailsToOrderItems(
                     orderResponse.OrderItems,
                     productsFromOrder,
                     item => item.ProductId,
                     product => product.ProductId);
+
+                MapUserDetailsToOrderResponse(
+                    orderResponse,
+                    user);
             }
         }
 
@@ -158,20 +198,19 @@ public class OrdersService : IOrdersService
             item => item.ProductId,
             product => product.ProductId);
 
-        if (await _usersMicroserviceClient.GetUserByIdAsync(orderAddRequest.UserId) == null)
+        var user = await _usersMicroserviceClient.GetUserByIdAsync(orderAddRequest.UserId);
+        if (user == null)
         {
             throw new ArgumentException($"User with ID {orderAddRequest.UserId} does not exist.");
         }
 
         var addedOrder = await _ordersRepository.CreateOrderAsync(InitializeOrderWithItems(orderAddRequest));
-
         if (addedOrder == null)
         {
             return null;
         }
 
         var addedOrderResponse = _mapper.Map<OrderResponseDto>(addedOrder);
-
         if (addedOrderResponse != null)
         {
             MapProductDetailsToOrderItems(
@@ -179,6 +218,10 @@ public class OrdersService : IOrdersService
                 productsFromOrder,
                 item => item.ProductId,
                 product => product.ProductId);
+
+            MapUserDetailsToOrderResponse(
+                addedOrderResponse,
+                user);
         }
 
         return addedOrderResponse;
@@ -204,13 +247,13 @@ public class OrdersService : IOrdersService
             product => product.ProductId
         );
 
-        if (await _usersMicroserviceClient.GetUserByIdAsync(orderUpdateRequest.UserId) == null)
+        var user = await _usersMicroserviceClient.GetUserByIdAsync(orderUpdateRequest.UserId);
+        if (user == null)
         {
             throw new ArgumentException($"User with ID {orderUpdateRequest.UserId} does not exist.");
         }
 
         var updatedOrder = await _ordersRepository.UpdateOrderAsync(InitializeOrderWithItems(orderUpdateRequest));
-
         if (updatedOrder == null)
         {
             return null;
@@ -225,6 +268,10 @@ public class OrdersService : IOrdersService
                 productsFromOrder,
                 item => item.ProductId,
                 product => product.ProductId);
+
+            MapUserDetailsToOrderResponse(
+                updatedOrderResponse,
+                user);
         }
 
         return updatedOrderResponse;
@@ -310,5 +357,10 @@ public class OrdersService : IOrdersService
 
             _mapper.Map(product, orderItem);
         }
+    }
+
+    private void MapUserDetailsToOrderResponse(OrderResponseDto orderResponse, UserResponseDto user)
+    {
+        _mapper.Map(user, orderResponse);
     }
 }
