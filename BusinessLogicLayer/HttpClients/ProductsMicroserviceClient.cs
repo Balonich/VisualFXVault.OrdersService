@@ -1,45 +1,65 @@
 using System.Net.Http.Json;
 using BusinessLogicLayer.DTOs;
+using Microsoft.Extensions.Logging;
+using Polly.Bulkhead;
 
 namespace BusinessLogicLayer.HttpClients;
 
 public class ProductsMicroserviceClient
 {
     private readonly HttpClient _httpClient;
+    private readonly ILogger<ProductsMicroserviceClient> _logger;
 
-    public ProductsMicroserviceClient(HttpClient httpClient)
+    public ProductsMicroserviceClient(HttpClient httpClient, ILogger<ProductsMicroserviceClient> logger)
     {
         _httpClient = httpClient;
+        _logger = logger;
     }
 
     public async Task<ProductResponseDto?> GetProductByIdAsync(Guid productId)
     {
-        var response = await _httpClient.GetAsync($"api/products/search/product-id/{productId}");
-
-        if (!response.IsSuccessStatusCode)
+        try
         {
-            if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+            var response = await _httpClient.GetAsync($"api/products/search/product-id/{productId}");
+
+            if (!response.IsSuccessStatusCode)
             {
-                return null; // Product not found
+                if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+                {
+                    return null; // Product not found
+                }
+                else if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
+                {
+                    throw new HttpRequestException($"Error fetching product: {response.ReasonPhrase}", null, response.StatusCode);
+                }
+                else
+                {
+                    throw new HttpRequestException($"Unexpected error: {response.ReasonPhrase}", null, response.StatusCode);
+                }
             }
-            else if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
+
+            var product = await response.Content.ReadFromJsonAsync<ProductResponseDto>();
+
+            if (product == null)
             {
-                throw new HttpRequestException($"Error fetching product: {response.ReasonPhrase}", null, response.StatusCode);
+                throw new ArgumentException($"Invalid product id: {productId}");
             }
-            else
-            {
-                throw new HttpRequestException($"Unexpected error: {response.ReasonPhrase}", null, response.StatusCode);
-            }
+
+            return product;
         }
-
-        var product = await response.Content.ReadFromJsonAsync<ProductResponseDto>();
-
-        if (product == null)
+        catch (BulkheadRejectedException ex)
         {
-            throw new ArgumentException($"Invalid product id: {productId}");
-        }
+            _logger.LogError(ex, $"Bulkhead isolation rejected the request for product {productId}. Returning fault data.");
 
-        return product;
+            return new ProductResponseDto
+            (
+                ProductId: Guid.NewGuid(),
+                ProductName: "Temporarily Unavailable (Bulkhead)",
+                Category: "Temporarily Unavailable (Bulkhead)",
+                UnitPrice: 0,
+                QuantityInStock: 0
+            );
+        }
     }
 
     public async Task<IEnumerable<ProductResponseDto>> GetProductsByIdsAsync(IEnumerable<Guid> productIds)

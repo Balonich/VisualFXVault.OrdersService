@@ -35,25 +35,22 @@ builder.Services.AddCors(options =>
     });
 });
 
-builder.Services.AddScoped<IMicroservicePolicies, MicroservicePolicies>();
+builder.Services.AddScoped<UsersMicroservicePolicies>();
+builder.Services.AddScoped<ProductsMicroservicePolicies>();
 
 builder.Services.AddHttpClient<UsersMicroserviceClient>(client =>
 {
     client.BaseAddress = new Uri($"{builder.Configuration["USERS_SERVICE_HOST"]}:{builder.Configuration["USERS_SERVICE_PORT"]}");
 })
 .AddPolicyHandler((serviceProvider, _) =>
-    serviceProvider.GetRequiredService<IMicroservicePolicies>().GetExponentialRetryPolicy())
-.AddPolicyHandler((serviceProvider, _) =>
-    serviceProvider.GetRequiredService<IMicroservicePolicies>().GetCircuitBreakerPolicy());
+    serviceProvider.GetRequiredService<UsersMicroservicePolicies>().GetCombinedPolicy());
 
 builder.Services.AddHttpClient<ProductsMicroserviceClient>(client =>
 {
     client.BaseAddress = new Uri($"{builder.Configuration["PRODUCTS_SERVICE_HOST"]}:{builder.Configuration["PRODUCTS_SERVICE_PORT"]}");
 })
 .AddPolicyHandler((serviceProvider, _) =>
-    serviceProvider.GetRequiredService<IMicroservicePolicies>().GetExponentialRetryPolicy())
-.AddPolicyHandler((serviceProvider, _) =>
-    serviceProvider.GetRequiredService<IMicroservicePolicies>().GetCircuitBreakerPolicy());
+    serviceProvider.GetRequiredService<ProductsMicroservicePolicies>().GetCombinedPolicy());
 
 var app = builder.Build();
 

@@ -3,6 +3,7 @@ using BusinessLogicLayer.DTOs;
 using DnsClient.Internal;
 using Microsoft.Extensions.Logging;
 using Polly.CircuitBreaker;
+using Polly.Timeout;
 
 namespace BusinessLogicLayer.HttpClients;
 
@@ -58,7 +59,13 @@ public class UsersMicroserviceClient
         {
             _logger.LogError(ex, $"Circuit breaker is open. Returning fault data for user {userId}.");
 
-            return new UserResponseDto(userId, "Temporarily Unavailable", "Temporarily Unavailable", "Unknown");
+            return new UserResponseDto(userId, "Temporarily Unavailable (circuit breaker)", "Temporarily Unavailable (circuit breaker)", "Unknown");
+        }
+        catch (TimeoutRejectedException ex)
+        {
+            _logger.LogError(ex, $"Request timed out while fetching user {userId}. Returning fault data.");
+
+            return new UserResponseDto(userId, "Temporarily Unavailable (timeout)", "Temporarily Unavailable (timeout)", "Unknown");
         }
     }
 }
