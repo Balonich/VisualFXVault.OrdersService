@@ -1,6 +1,8 @@
 using System.Net.Http.Json;
+using System.Text.Json;
 using BusinessLogicLayer.DTOs;
 using DnsClient.Internal;
+using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Logging;
 using Polly.CircuitBreaker;
 using Polly.Timeout;
@@ -11,17 +13,34 @@ public class UsersMicroserviceClient
 {
     private readonly HttpClient _httpClient;
     private readonly ILogger<UsersMicroserviceClient> _logger;
+    private readonly IDistributedCache _distributedCache;
 
-    public UsersMicroserviceClient(HttpClient httpClient, ILogger<UsersMicroserviceClient> logger)
+    public UsersMicroserviceClient(HttpClient httpClient,
+        ILogger<UsersMicroserviceClient> logger,
+        IDistributedCache distributedCache)
     {
         _httpClient = httpClient;
         _logger = logger;
+        _distributedCache = distributedCache;
     }
 
     public async Task<UserResponseDto?> GetUserByIdAsync(Guid userId)
     {
         try
         {
+            var cacheKey = $"user:{userId}";
+            var cachedUser = await _distributedCache.GetStringAsync(cacheKey);
+
+            if (cachedUser != null)
+            {
+                _logger.LogInformation($"Cache hit for user {userId}");
+                return JsonSerializer.Deserialize<UserResponseDto>(cachedUser);
+            }
+            else
+            {
+                _logger.LogInformation($"Cache miss for user {userId}");
+            }
+
             var response = await _httpClient.GetAsync($"api/users/{userId}");
 
             if (!response.IsSuccessStatusCode)
@@ -52,6 +71,14 @@ public class UsersMicroserviceClient
             {
                 throw new ArgumentException($"Invalid user id: {userId}");
             }
+
+            await _distributedCache.SetStringAsync(cacheKey,
+                JsonSerializer.Serialize(user),
+                new DistributedCacheEntryOptions
+                {
+                    AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(30),
+                    SlidingExpiration = TimeSpan.FromSeconds(10)
+                });
 
             return user;
         }

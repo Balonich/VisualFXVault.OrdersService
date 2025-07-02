@@ -18,7 +18,7 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - USERS_SERVICE_HOST=http://users-microservice
-      - USERS_SERVICE_PORT=8080
+      - USERS_SERVICE_PORT=9090
       - PRODUCTS_SERVICE_HOST=http://products-microservice
       - PRODUCTS_SERVICE_PORT=8080
       - MONGO_HOST=mongodb-container
@@ -86,7 +86,7 @@ services:
     image: visualfxvault-usersservice:initial
     container_name: users-microservice
     ports:
-      - "5001:8080"
+      - "5001:9090"
     environment:
       - ASPNETCORE_HTTP_PORT=8080
       - ASPNETCORE_ENVIRONMENT=Development

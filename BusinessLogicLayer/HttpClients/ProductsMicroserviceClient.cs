@@ -43,7 +43,18 @@ public class ProductsMicroserviceClient
 
             if (!response.IsSuccessStatusCode)
             {
-                if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+                if (response.StatusCode == System.Net.HttpStatusCode.ServiceUnavailable)
+                {
+                    var productFromFallback = await response.Content.ReadFromJsonAsync<ProductResponseDto>();
+
+                    if (productFromFallback == null)
+                    {
+                        throw new NotImplementedException($"Fallback policy was not implemented");
+                    }
+
+                    return productFromFallback;
+                }
+                else if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
                 {
                     return null; // Product not found
                 }
