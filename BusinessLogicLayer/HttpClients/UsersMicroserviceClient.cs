@@ -41,7 +41,7 @@ public class UsersMicroserviceClient
                 _logger.LogInformation($"Cache miss for user {userId}");
             }
 
-            var response = await _httpClient.GetAsync($"api/users/{userId}");
+            var response = await _httpClient.GetAsync($"api/gateway/users/{userId}");
 
             if (!response.IsSuccessStatusCode)
             {

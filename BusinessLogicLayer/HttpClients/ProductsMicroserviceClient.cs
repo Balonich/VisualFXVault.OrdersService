@@ -39,7 +39,7 @@ public class ProductsMicroserviceClient
                 _logger.LogInformation($"Cache miss for product {productId}");
             }
 
-            var response = await _httpClient.GetAsync($"api/products/search/product-id/{productId}");
+            var response = await _httpClient.GetAsync($"api/gateway/products/search/product-id/{productId}");
 
             if (!response.IsSuccessStatusCode)
             {
@@ -102,7 +102,7 @@ public class ProductsMicroserviceClient
 
     public async Task<IEnumerable<ProductResponseDto>> GetProductsByIdsAsync(IEnumerable<Guid> productIds)
     {
-        var response = await _httpClient.GetAsync($"api/products/search/product-ids/{string.Join(",", productIds)}");
+        var response = await _httpClient.GetAsync($"api/gateway/products/search/product-ids/{string.Join(",", productIds)}");
 
         if (!response.IsSuccessStatusCode)
         {
