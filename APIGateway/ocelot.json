@@ -88,6 +88,25 @@
       "UpstreamScheme": "http",
       "FileCacheOptions": {
         "TtlSeconds": 60
+      },
+      "QoSOptions": {
+        "ExceptionsAllowedBeforeBreaking": 3,
+        "DurationOfBreak": "00:00:10",
+        "TimeoutValue": "00:00:05"
+      },
+      "RetryOptions": {
+        "RetryCount": 3,
+        "RetryOnServerError": true
+      },
+      "RateLimitOptions": {
+        "EnableRateLimiting": true,
+        "ClientWhitelist": ["Client1", "Client2"],
+        "ClientIdHeader": "X-ClientId",
+        "Limit": 3,
+        "Period": "1m",
+        "PeriodTimespan": 30,
+        "HttpStatusCode": 429,
+        "QuotaExceededMessage": "Too many requests, please try again later."
       }
     },
     {
