@@ -26,6 +26,10 @@ services:
       - MONGO_DB=VisualFXVault_Orders
       - REDIS_HOST=redis-container
       - REDIS_PORT=6379
+      - RABBITMQ_HOST=rabbitmq-container
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USER=rabbitmq-vfx
+      - RABBITMQ_PASSWORD=pa55w0Rd
     ports:
       - 7000:8080
     networks:
@@ -61,6 +65,10 @@ services:
       - SQLSERVER_DATABASE=VisualFXVault.ProductsService
       - SQLSERVER_USER=sa
       - SQLSERVER_PASSWORD=pa55w0Rd
+      - RABBITMQ_HOST=rabbitmq-container
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USER=rabbitmq-vfx
+      - RABBITMQ_PASSWORD=pa55w0Rd
     networks:
       - products-service-network
       - services-communication-network
@@ -108,6 +116,18 @@ services:
       - "6379:6379"
     volumes:
       - ../docker-compose/redis-cache:/data
+    networks:
+      - services-communication-network
+
+  rabbitmq:
+    image: rabbitmq:4.1.2-management
+    container_name: rabbitmq-container
+    ports:
+      - "15672:15672"  # Management UI
+      - "5672:5672"    # RabbitMQ
+    environment:
+      - RABBITMQ_DEFAULT_USER=rabbitmq-vfx
+      - RABBITMQ_DEFAULT_PASS=pa55w0Rd
     networks:
       - services-communication-network
     
