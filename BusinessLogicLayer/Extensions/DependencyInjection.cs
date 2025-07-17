@@ -1,3 +1,6 @@
+using BusinessLogicLayer.MessageQueue.HostedServices;
+using BusinessLogicLayer.MessageQueue.Implementations.Consumers;
+using BusinessLogicLayer.MessageQueue.Interfaces.Consumers;
 using BusinessLogicLayer.Services.Implementations;
 using BusinessLogicLayer.Services.Interfaces;
 using BusinessLogicLayer.Validators;
@@ -24,6 +27,12 @@ public static class DependencyInjection
         {
             options.Configuration = $"{Environment.GetEnvironmentVariable("REDIS_HOST")}:{Environment.GetEnvironmentVariable("REDIS_PORT")}";
         });
+
+        services.AddTransient<IProductNameUpdatedConsumer, ProductNameUpdatedConsumer>();
+        services.AddHostedService<ProductNameUpdatedHostedService>();
+
+        services.AddTransient<IProductDeletedConsumer, ProductDeletedConsumer>();
+        services.AddHostedService<ProductDeletedHostedService>();
 
         return services;
     }

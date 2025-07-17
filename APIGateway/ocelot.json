@@ -110,18 +110,6 @@
       }
     },
     {
-      "UpstreamPathTemplate": "/api/gateway/products",
-      "DownstreamPathTemplate": "/api/products",
-      "DownstreamHostAndPorts": [
-        {
-          "Host": "products-microservice",
-          "Port": 8080
-        }
-      ],
-      "UpstreamHttpMethod": ["PUT"],
-      "UpstreamScheme": "http"
-    },
-    {
       "UpstreamPathTemplate": "/api/gateway/products/{productId}",
       "DownstreamPathTemplate": "/api/products/{productId}",
       "DownstreamHostAndPorts": [

@@ -30,6 +30,7 @@ services:
       - RABBITMQ_PORT=5672
       - RABBITMQ_USER=rabbitmq-vfx
       - RABBITMQ_PASSWORD=pa55w0Rd
+      - RABBITMQ_PRODUCTS_EXCHANGE=products.exchange
     ports:
       - 7000:8080
     networks:
@@ -39,6 +40,7 @@ services:
       - mongodb-container
       - products-microservice
       - users-microservice
+      - rabbitmq
 
   sqlserver-container:
     image: mcr.microsoft.com/mssql/server:latest
@@ -69,11 +71,13 @@ services:
       - RABBITMQ_PORT=5672
       - RABBITMQ_USER=rabbitmq-vfx
       - RABBITMQ_PASSWORD=pa55w0Rd
+      - RABBITMQ_PRODUCTS_EXCHANGE=products.exchange
     networks:
       - products-service-network
       - services-communication-network
     depends_on:
       - sqlserver-container
+      - rabbitmq
 
   postgres-container:
     image: postgres:17.4
